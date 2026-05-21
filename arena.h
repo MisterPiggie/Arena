@@ -1,13 +1,16 @@
 #ifndef STB_ARENA_H
+#define STB_ARENA_H
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/mman.h>
+#include <assert.h>
 
 #define KB(x) ((size_t)(x) * 1024)
 #define MB(x) (KB(x) * 1024)
 #define GB(x) (MB(x) * 1024)
 
 
-#define COMMIT_CHUNK KB(64)
+#define COMMIT_CHUNK KB(64) //MIGHT CHANGE
 
 
 typedef struct
@@ -31,7 +34,6 @@ void arena_destroy(Arena *a);
 
 #ifdef ARENA_IMPLEMENTATION
 
-#include <sys/mman.h>
 
 
 
@@ -63,18 +65,21 @@ Arena arena_create(size_t reserve_size)
 void *arena_push(Arena *a, size_t size)
 {
     size_t new_commit;
+    size_t align = 16;
+    size_t padding = (~a->used + 1) & (align -  1);
+    size_t total = size + padding;
     void *ptr;
 
-    if (a->used + size > a->commited) 
+    while (a->used + total > a->commited) 
     {
         new_commit = a->commited + COMMIT_CHUNK;
-        assert(a->used + size <= a->reserved && "Arena out of reserved space");
+        assert(new_commit <= a->reserved && "Arena out of reserved space");
         os_commit(a->memory, new_commit);
         a->commited = new_commit;
     }
 
-    ptr = a->memory + a->used;
-    a->used += size;
+    ptr = a->memory + a->used + padding;
+    a->used += total;
 
     return ptr;
 
@@ -87,8 +92,9 @@ void arena_rewind(Arena *a)
 
 void arena_reset(Arena *a)
 {
+    madvise(a->memory, a->commited,  MADV_DONTNEED);
     a->used = 0;
-    os_commit(a->memory, a->used);
+    a->commited = 0;
 }
 void arena_destroy(Arena *a)
 {
