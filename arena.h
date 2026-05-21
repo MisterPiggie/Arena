@@ -2,6 +2,7 @@
 #define STB_ARENA_H
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <assert.h>
 
@@ -23,12 +24,13 @@ typedef struct
 
 Arena arena_create(size_t reserve_size);
 void *arena_push(Arena *a, size_t size);
+char *arena_push_str(Arena *a, const char *cstr);
 void arena_reset(Arena *a);
 void arena_rewind(Arena *a);
 void arena_destroy(Arena *a);
 
 #define push_array(arena, type, count)  (type *)arena_push((arena), sizeof(type)*(count))
-#define push_struct(arena, type) push_array((arena), (type), 1)
+#define push_struct(arena, type) push_array((arena), type, 1)
 
 #endif // !STB_ARENA_H
 
@@ -100,5 +102,13 @@ void arena_destroy(Arena *a)
 {
     os_release(a->memory, a->reserved);
     *a = (Arena){0};
+}
+
+char *arena_push_str(Arena *a, const char *cstr)
+{
+    size_t len = strlen(cstr);
+    char *data = push_array(a, char, len+1);
+    memcpy(data, cstr, len+1);
+    return data;
 }
 #endif // ARENA_IMPLEMENTATION
