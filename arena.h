@@ -32,8 +32,8 @@ void arena_reset(Arena *a);
 void arena_rewind(Arena *a);
 void arena_destroy(Arena *a);
 
-#define push_array(arena, type, count)  (type *)arena_push((arena), sizeof(type)*(count))
-#define push_struct(arena, type) push_array((arena), type, 1)
+#define arena_push_array(arena, type, count)  (type *)arena_push((arena), sizeof(type)*(count))
+#define arena_push_struct(arena, type) arena_push_array((arena), type, 1)
 
 #endif // !STB_ARENA_H
 
