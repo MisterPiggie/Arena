@@ -27,6 +27,7 @@ Arena arena_create(size_t reserve_size);
 void *arena_push(Arena *a, size_t size);
 char *arena_push_str(Arena *a, const char *cstr);
 char *arena_push_strf(Arena *a, const char *cstr, ...);
+char *arena_push_strn(Arena *a, const char *cstr, size_t n);
 void arena_reset(Arena *a);
 void arena_rewind(Arena *a);
 void arena_destroy(Arena *a);
@@ -113,6 +114,15 @@ char *arena_push_str(Arena *a, const char *cstr)
     memcpy(data, cstr, len+1);
     return data;
 }
+
+char *arena_push_strn(Arena *a, const char *cstr, size_t n)
+{
+    char *data = push_array(a, char, n+1);
+    memcpy(data, cstr, n);
+    data[n] = '\0';
+    return data;
+}
+
 char *arena_push_strf(Arena *a, const char *cstr, ...)
 {
     va_list args;
