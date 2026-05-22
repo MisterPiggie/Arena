@@ -104,7 +104,6 @@ void arena_reset(Arena *a)
 void arena_destroy(Arena *a)
 {
     os_release(a->memory, a->reserved);
-    *a = (Arena){0};
 }
 
 char *arena_push_str(Arena *a, const char *cstr)
