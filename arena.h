@@ -35,6 +35,9 @@ void arena_destroy(Arena *a);
 #define arena_push_array(arena, type, count)  (type *)arena_push((arena), sizeof(type)*(count))
 #define arena_push_struct(arena, type) arena_push_array((arena), type, 1)
 
+#define arena_push_array_zero(arena, type, count)  (type *)arena_push_zero((arena), sizeof(type)*(count))
+#define arena_push_struct_zero(arena, type) arena_push_array_zero((arena), type, 1)
+
 #endif // !STB_ARENA_H
 
 #ifdef ARENA_IMPLEMENTATION
@@ -88,6 +91,29 @@ void *arena_push(Arena *a, size_t size)
 
     return ptr;
 
+}
+
+void *arena_push_zero(Arena *a, size_t size)
+{
+    size_t new_commit;
+    size_t align = 16;
+    size_t padding = (~a->used + 1) & (align -  1);
+    size_t total = size + padding;
+    void *ptr;
+
+    while (a->used + total > a->commited) 
+    {
+        new_commit = a->commited + COMMIT_CHUNK;
+        assert(new_commit <= a->reserved && "Arena out of reserved space");
+        os_commit(a->memory, new_commit);
+        a->commited = new_commit;
+    }
+
+    ptr = a->memory + a->used + padding;
+    memset(ptr, 0, size);
+    a->used += total;
+
+    return ptr;
 }
 
 void arena_rewind(Arena *a)
