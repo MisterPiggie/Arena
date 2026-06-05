@@ -142,7 +142,7 @@ char *arena_push_str(Arena *a, const char *cstr)
 
 char *arena_push_strn(Arena *a, const char *cstr, size_t n)
 {
-    char *data = push_array(a, char, n+1);
+    char *data = arena_push_array(a, char, n+1);
     memcpy(data, cstr, n);
     data[n] = '\0';
     return data;
@@ -152,10 +152,10 @@ char *arena_push_strf(Arena *a, const char *cstr, ...)
 {
     va_list args;
     va_start(args, cstr);
-    size_t len = vsnprintf(NULL, 0, fmt, args);
+    size_t len = vsnprintf(NULL, 0, cstr, args);
     va_end(args);
 
-    char *data = push_array(a, char, len+1);
+    char *data = aren_push_array(a, char, len+1);
     va_start(args, cstr);
     vsnprintf(data, len + 1, cstr, args);
     va_end(args);
