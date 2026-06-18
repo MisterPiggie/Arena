@@ -2,6 +2,7 @@
 #define STB_ARENA_H
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <assert.h>
@@ -12,8 +13,6 @@
 #define GB(x) (MB(x) * 1024)
 
 
-#define COMMIT_CHUNK KB(64) //MIGHT CHANGE
-
 
 typedef struct
 {
@@ -21,9 +20,10 @@ typedef struct
     size_t  used;
     size_t  commited;
     size_t  reserved;
+    size_t  commit_chunk;
 } Arena;
 
-Arena arena_create(size_t reserve_size);
+Arena arena_create(size_t reserve_size, size_t commit_chunk);
 void *arena_push(Arena *a, size_t size);
 void *arena_push_zero(Arena *a, size_t size);
 char *arena_push_str(Arena *a, const char *cstr);
@@ -63,17 +63,17 @@ static void os_release(void *ptr, size_t size)
     munmap(ptr, size);
 }
 
-Arena arena_create(size_t reserve_size)
+Arena arena_create(size_t reserve_size, size_t commit_chunk)
 {
     Arena a = {0};
     a.memory = (uint8_t *)os_reserve(reserve_size);
     a.reserved = reserve_size;
+    a.commit_chunk = commit_chunk;
     return a;
 }
 
 void *arena_push(Arena *a, size_t size)
 {
-    size_t new_commit;
     size_t align = 16;
     size_t padding = (~a->used + 1) & (align -  1);
     size_t total = size + padding;
@@ -81,10 +81,9 @@ void *arena_push(Arena *a, size_t size)
 
     while (a->used + total > a->commited) 
     {
-        new_commit = a->commited + COMMIT_CHUNK;
-        assert(new_commit <= a->reserved && "Arena out of reserved space");
-        os_commit(a->memory, new_commit);
-        a->commited = new_commit;
+        assert(a->commited + a.commit_chunk <= a->reserved && "Arena out of reserved space");
+        os_commit(a->memory + a->commited, a.commit_chunk;
+        a->commited += a.commit_chunk;
     }
 
     ptr = a->memory + a->used + padding;
@@ -96,7 +95,10 @@ void *arena_push(Arena *a, size_t size)
 
 void *arena_push_zero(Arena *a, size_t size)
 {
+<<<<<<< HEAD
     size_t new_commit;
+=======
+>>>>>>> 5d4ee7b (added commit chunk arg in arena_create func)
     size_t align = 16;
     size_t padding = (~a->used + 1) & (align -  1);
     size_t total = size + padding;
@@ -104,10 +106,16 @@ void *arena_push_zero(Arena *a, size_t size)
 
     while (a->used + total > a->commited) 
     {
+<<<<<<< HEAD
         new_commit = a->commited + COMMIT_CHUNK;
         assert(new_commit <= a->reserved && "Arena out of reserved space");
         os_commit(a->memory, new_commit);
         a->commited = new_commit;
+=======
+        assert(a->commited + a.commit_chunk <= a->reserved && "Arena out of reserved space");
+        os_commit(a->memory + a->commited, a.commit_chunk);
+        a->commited += a.commit_chunk;
+>>>>>>> 5d4ee7b (added commit chunk arg in arena_create func)
     }
 
     ptr = a->memory + a->used + padding;
@@ -136,7 +144,7 @@ void arena_destroy(Arena *a)
 char *arena_push_str(Arena *a, const char *cstr)
 {
     size_t len = strlen(cstr);
-    char *data = push_array(a, char, len+1);
+    char *data = arena_push_array(a, char, len+1);
     memcpy(data, cstr, len+1);
     return data;
 }
@@ -156,7 +164,11 @@ char *arena_push_strf(Arena *a, const char *cstr, ...)
     size_t len = vsnprintf(NULL, 0, cstr, args);
     va_end(args);
 
+<<<<<<< HEAD
     char *data = aren_push_array(a, char, len+1);
+=======
+    char *data = arena_push_array(a, char, len+1);
+>>>>>>> 5d4ee7b (added commit chunk arg in arena_create func)
     va_start(args, cstr);
     vsnprintf(data, len + 1, cstr, args);
     va_end(args);
