@@ -95,7 +95,6 @@ void *arena_push(Arena *a, size_t size)
 
 void *arena_push_zero(Arena *a, size_t size)
 {
-    size_t new_commit;
     size_t align = 16;
     size_t padding = (~a->used + 1) & (align -  1);
     size_t total = size + padding;
@@ -103,10 +102,7 @@ void *arena_push_zero(Arena *a, size_t size)
 
     while (a->used + total > a->commited) 
     {
-        new_commit = a->commited + a->commit_chunk;
-        assert(new_commit <= a->reserved && "Arena out of reserved space");
-        os_commit(a->memory, new_commit);
-        a->commited = new_commit;
+
         assert(a->commited + a->commit_chunk <= a->reserved && "Arena out of reserved space");
         os_commit(a->memory + a->commited, a->commit_chunk);
         a->commited += a->commit_chunk;
@@ -155,8 +151,10 @@ char *arena_push_strf(Arena *a, const char *cstr, ...)
 {
     va_list args;
     va_start(args, cstr);
-    size_t len = vsnprintf(NULL, 0, cstr, args);
+    int len = vsnprintf(NULL, 0, cstr, args);
     va_end(args);
+    if (len < 0)
+        return NULL;
 
     char *data = arena_push_array(a, char, len+1);
     va_start(args, cstr);
